@@ -20,7 +20,16 @@ describe('Health (e2e)', () => {
     await app.close();
   });
 
-  it('GET /health returns 200', () => {
-    return request(app.getHttpServer()).get('/health').expect(200);
+  it('GET /health returns 200 with mongodb status', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/health')
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 'ok',
+      info: { mongodb: { status: 'up' } },
+      error: {},
+      details: { mongodb: { status: 'up' } },
+    });
   });
 });
