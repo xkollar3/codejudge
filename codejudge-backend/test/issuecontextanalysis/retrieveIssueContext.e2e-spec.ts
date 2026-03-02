@@ -2,10 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { EventStore, EventStream, IEvent, UUID } from '@ocoda/event-sourcing';
+import { EventStore, EventStream, UUID } from '@ocoda/event-sourcing';
 import { IssueContextModule } from 'src/issuecontextanalysis/issueContextAnalysisModule';
 import { IssueContext } from 'src/issuecontextanalysis/aggregate/IssueContext';
 import { IssueContextRetrievedEvent } from 'src/events';
+import { pollEvents } from '../utils/pollEvents';
 
 describe('retrieveIssueContext (e2e)', () => {
   let app: INestApplication<App>;
@@ -52,23 +53,3 @@ describe('retrieveIssueContext (e2e)', () => {
     );
   }, 15000);
 });
-
-async function pollEvents(
-  eventStore: EventStore<any>,
-  stream: EventStream,
-  expectedCount: number,
-): Promise<IEvent[]> {
-  const timeoutMs = 5000;
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const events: IEvent[] = [];
-    for await (const batch of eventStore.getEvents(stream)) {
-      events.push(...batch);
-    }
-    if (events.length >= expectedCount) return events;
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  throw new Error(
-    `Timed out: expected ${expectedCount} events after ${timeoutMs}ms`,
-  );
-}

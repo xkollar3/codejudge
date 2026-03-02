@@ -8,7 +8,9 @@ import {
   IssueReferenceProvidedEvent,
   IssueContextRetrievedEvent,
   PullRequestContextRetrievedEvent,
+  PullRequestDiffsRetrievedEvent,
   type PullRequestContextPayload,
+  type PullRequestDiffsPayload,
   type IssueTrackerType,
   type VcsType,
 } from '../../events';
@@ -22,6 +24,7 @@ export class IssueContext extends AggregateRoot {
 
   private trackerIssueContext?: TrackerIssueContext;
   private pullRequestContexts?: PullRequestContext[];
+  private pullRequestDiffs?: PullRequestDiffs[];
 
   constructor(id?: UUID) {
     super();
@@ -80,6 +83,32 @@ export class IssueContext extends AggregateRoot {
       (ctx) => new PullRequestContext(ctx.url, ctx.description, ctx.comments),
     );
   }
+
+  public retrievePullRequestDiffs(diffs: PullRequestDiffsPayload[]) {
+    this.applyEvent(new PullRequestDiffsRetrievedEvent(diffs));
+  }
+
+  @EventHandler(PullRequestDiffsRetrievedEvent)
+  applyPullRequestDiffsRetrieved(event: PullRequestDiffsRetrievedEvent) {
+    this.pullRequestDiffs = event.pullRequestDiffs.map(
+      (diff) =>
+        new PullRequestDiffs(
+          diff.url,
+          diff.baseSha,
+          diff.headSha,
+          diff.changedFiles.map(
+            (f) =>
+              new ChangedFile(
+                f.filename,
+                f.linesAdded,
+                f.linesRemoved,
+                f.fileBefore,
+                f.fileAfter,
+              ),
+          ),
+        ),
+    );
+  }
 }
 
 export class TrackerIssueContext {
@@ -95,5 +124,24 @@ export class PullRequestContext {
     public readonly url: string,
     public readonly description: string,
     public readonly comments: string[],
+  ) {}
+}
+
+export class PullRequestDiffs {
+  constructor(
+    public readonly url: string,
+    public readonly baseSha: string,
+    public readonly headSha: string,
+    public readonly changedFiles: ChangedFile[],
+  ) {}
+}
+
+export class ChangedFile {
+  constructor(
+    public readonly filename: string,
+    public readonly linesAdded: number,
+    public readonly linesRemoved: number,
+    public readonly fileBefore: string | null,
+    public readonly fileAfter: string | null,
   ) {}
 }

@@ -10,3 +10,9 @@ export {
   PullRequestContextRetrievedEvent,
   type PullRequestContextPayload,
 } from './retrievePullRequestContext';
+
+export {
+  PullRequestDiffsRetrievedEvent,
+  type PullRequestDiffsPayload,
+  type ChangedFilePayload,
+} from './retrievePullRequestDiffs';

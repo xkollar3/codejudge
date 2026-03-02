@@ -1,11 +1,5 @@
-import {
-  CommandHandler,
-  ICommand,
-  ICommandHandler,
-  UUID,
-} from '@ocoda/event-sourcing';
+import { Injectable } from '@nestjs/common';
 import { type VcsType } from '../../events';
-import { IssueContextRepository } from '../aggregate/IssueContextRepository';
 import { GitHubVcsClient } from './github';
 
 export type PullRequestDetails = {
@@ -14,43 +8,29 @@ export type PullRequestDetails = {
   comments: string[];
 };
 
+export type PullRequestDiffDetails = {
+  url: string;
+  baseSha: string;
+  headSha: string;
+  changedFiles: {
+    filename: string;
+    linesAdded: number;
+    linesRemoved: number;
+    fileBefore: string | null;
+    fileAfter: string | null;
+  }[];
+};
+
 export interface VcsClient {
   getPullRequestDetails(prUrl: string): Promise<PullRequestDetails>;
+  getPullRequestDiffs(prUrl: string): Promise<PullRequestDiffDetails>;
 }
 
-export class RetrievePullRequestContextCommand implements ICommand {
-  constructor(
-    public readonly issueContextId: UUID,
-    public readonly pullRequests: string[],
-  ) {}
-}
+@Injectable()
+export class VcsClientResolver {
+  constructor(private readonly githubVcsClient: GitHubVcsClient) {}
 
-@CommandHandler(RetrievePullRequestContextCommand)
-export class RetrievePullRequestContextCommandHandler
-  implements ICommandHandler<RetrievePullRequestContextCommand>
-{
-  constructor(
-    private readonly aggregateRepository: IssueContextRepository,
-    private readonly githubVcsClient: GitHubVcsClient,
-  ) {}
-
-  async execute(command: RetrievePullRequestContextCommand): Promise<void> {
-    const issueContext = await this.aggregateRepository.getById(
-      command.issueContextId,
-    );
-
-    const client = this.resolveClient(issueContext.getVcsType());
-    const details = await Promise.all(
-      command.pullRequests.map((prUrl) =>
-        client.getPullRequestDetails(prUrl),
-      ),
-    );
-
-    issueContext.retrievePullRequestContext(details);
-    await this.aggregateRepository.save(issueContext);
-  }
-
-  private resolveClient(vcsType: VcsType): VcsClient {
+  resolve(vcsType: VcsType): VcsClient {
     switch (vcsType) {
       case 'GITHUB':
         return this.githubVcsClient;

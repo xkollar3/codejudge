@@ -5,10 +5,10 @@ import { App } from 'supertest/types';
 import { EventStore, EventStream, UUID } from '@ocoda/event-sourcing';
 import { IssueContextModule } from 'src/issuecontextanalysis/issueContextAnalysisModule';
 import { IssueContext } from 'src/issuecontextanalysis/aggregate/IssueContext';
-import { PullRequestContextRetrievedEvent } from 'src/events';
+import { PullRequestDiffsRetrievedEvent } from 'src/events';
 import { pollEvents } from '../utils/pollEvents';
 
-describe('retrievePullRequestContext (e2e)', () => {
+describe('retrievePullRequestDiffs (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -25,7 +25,7 @@ describe('retrievePullRequestContext (e2e)', () => {
     await app.close();
   });
 
-  it('retrieves pull request context from GitHub and emits PullRequestContextRetrievedEvent', async () => {
+  it('retrieves pull request diffs from GitHub and emits PullRequestDiffsRetrievedEvent', async () => {
     const response = await request(app.getHttpServer())
       .post('/issue-context')
       .send({
@@ -39,22 +39,27 @@ describe('retrievePullRequestContext (e2e)', () => {
     const eventStore = app.get(EventStore);
     const stream = EventStream.for(IssueContext, aggregateId);
 
-    const events = await pollEvents(eventStore, stream, 3);
+    const events = await pollEvents(eventStore, stream, 4, 20000);
 
-    const prEvent = events.find(
-      (e) => e instanceof PullRequestContextRetrievedEvent,
+    const diffsEvent = events.find(
+      (e) => e instanceof PullRequestDiffsRetrievedEvent,
     );
 
-    expect(prEvent).toBeDefined();
-    expect(prEvent!.pullRequestContexts).toHaveLength(1);
-    expect(prEvent!.pullRequestContexts[0].url).toBe(
-      'https://github.com/xkollar3/codejudge/pull/2',
-    );
-    expect(prEvent!.pullRequestContexts[0].description).toBe(
-      'Added a section for developers to highlight improvements.',
-    );
-    expect(prEvent!.pullRequestContexts[0].comments).toContain(
-      'Missing more detailed description of the project here.',
-    );
-  }, 15000);
+    expect(diffsEvent).toBeDefined();
+    expect(diffsEvent!.pullRequestDiffs).toHaveLength(1);
+
+    const prDiff = diffsEvent!.pullRequestDiffs[0];
+    expect(prDiff.url).toBe('https://github.com/xkollar3/codejudge/pull/2');
+    expect(prDiff.baseSha).toBeDefined();
+    expect(prDiff.headSha).toBeDefined();
+    expect(prDiff.changedFiles).toHaveLength(1);
+
+    const file = prDiff.changedFiles[0];
+    expect(file.filename).toBe('README.md');
+    expect(file.linesAdded).toBe(3);
+    expect(file.linesRemoved).toBe(0);
+    expect(file.fileBefore).toBeDefined();
+    expect(file.fileAfter).toBeDefined();
+    expect(file.fileAfter).toContain('VASTLY Improved this markdown!');
+  }, 30000);
 });

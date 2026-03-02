@@ -7,7 +7,7 @@ import {
   UUID,
 } from '@ocoda/event-sourcing';
 import { IssueReferenceProvidedEvent } from 'src/events';
-import { RetrieveIssueContextCommand } from '../issuetracker/issueTrackerAcl';
+import { RetrieveIssueContextCommand } from './retrieveIssueContextCommand';
 
 @EventSubscriber(IssueReferenceProvidedEvent)
 export class RetrieveIssueContextPolicy implements IEventSubscriber {

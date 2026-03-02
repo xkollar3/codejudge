@@ -7,7 +7,7 @@ import {
   UUID,
 } from '@ocoda/event-sourcing';
 import { IssueContextRetrievedEvent } from 'src/events';
-import { RetrievePullRequestContextCommand } from '../vcs/vcsAcl';
+import { RetrievePullRequestContextCommand } from './retrievePullRequestContextCommand';
 
 @EventSubscriber(IssueContextRetrievedEvent)
 export class RetrievePullRequestContextPolicy implements IEventSubscriber {

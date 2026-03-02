@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { type PullRequestDetails, type VcsClient } from './vcsAcl';
+import {
+  type PullRequestDetails,
+  type PullRequestDiffDetails,
+  type VcsClient,
+} from './vcsAcl';
 
 @Injectable()
 export class GitHubVcsClient implements VcsClient {
@@ -22,6 +26,126 @@ export class GitHubVcsClient implements VcsClient {
     ]);
 
     return { url: prUrl, description, comments };
+  }
+
+  async getPullRequestDiffs(prUrl: string): Promise<PullRequestDiffDetails> {
+    const { owner, repo, prNumber } = this.parsePrUrl(prUrl);
+
+    const prInfo = await this.fetchPrInfo(owner, repo, prNumber);
+    const files = await this.fetchPrFiles(owner, repo, prNumber);
+
+    const changedFiles = await Promise.all(
+      files.map(async (file) => {
+        const fileBefore =
+          file.status === 'added'
+            ? null
+            : await this.fetchFileContent(
+                owner,
+                repo,
+                file.previous_filename ?? file.filename,
+                prInfo.baseSha,
+              );
+
+        const fileAfter =
+          file.status === 'removed'
+            ? null
+            : await this.fetchFileContent(
+                owner,
+                repo,
+                file.filename,
+                prInfo.headSha,
+              );
+
+        return {
+          filename: file.filename,
+          linesAdded: file.additions,
+          linesRemoved: file.deletions,
+          fileBefore,
+          fileAfter,
+        };
+      }),
+    );
+
+    return {
+      url: prUrl,
+      baseSha: prInfo.baseSha,
+      headSha: prInfo.headSha,
+      changedFiles,
+    };
+  }
+
+  private async fetchPrInfo(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<{ baseSha: string; headSha: string }> {
+    const url = `${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`;
+    this.logger.log(`GET ${url}`);
+
+    const response = await fetch(url, { headers: this.headers() });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch GitHub PR info: ${response.status} ${response.statusText}`,
+      );
+    }
+    const data = (await response.json()) as {
+      base: { sha: string };
+      head: { sha: string };
+    };
+    return { baseSha: data.base.sha, headSha: data.head.sha };
+  }
+
+  private async fetchPrFiles(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<
+    Array<{
+      filename: string;
+      previous_filename?: string;
+      status: string;
+      additions: number;
+      deletions: number;
+    }>
+  > {
+    const url = `${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}/files`;
+    this.logger.log(`GET ${url}`);
+
+    const response = await fetch(url, { headers: this.headers() });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch GitHub PR files: ${response.status} ${response.statusText}`,
+      );
+    }
+    return (await response.json()) as Array<{
+      filename: string;
+      previous_filename?: string;
+      status: string;
+      additions: number;
+      deletions: number;
+    }>;
+  }
+
+  private async fetchFileContent(
+    owner: string,
+    repo: string,
+    path: string,
+    ref: string,
+  ): Promise<string> {
+    const url = `${this.baseUrl}/repos/${owner}/${repo}/contents/${path}?ref=${ref}`;
+    this.logger.log(`GET ${url}`);
+
+    const response = await fetch(url, { headers: this.headers() });
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch file content: ${response.status} ${response.statusText}`,
+      );
+    }
+    const data = (await response.json()) as { content: string; encoding: string };
+    if (data.encoding === 'base64') {
+      return Buffer.from(data.content, 'base64').toString('utf-8');
+    }
+    return data.content;
   }
 
   private parsePrUrl(url: string): {
