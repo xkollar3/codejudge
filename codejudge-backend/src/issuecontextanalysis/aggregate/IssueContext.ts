@@ -4,9 +4,10 @@ import {
   EventHandler,
   UUID,
 } from '@ocoda/event-sourcing';
-import { IssueReferenceProvidedEvent } from '../provideissuereference/provideIssueReferenceEvent';
-
-export type IssueTrackerType = 'GITHUB' | 'GITLAB' | 'JIRA';
+import {
+  IssueReferenceProvidedEvent,
+  type IssueTrackerType,
+} from '../../events';
 
 @Aggregate()
 export class IssueContext extends AggregateRoot {

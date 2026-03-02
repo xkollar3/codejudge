@@ -1,5 +1,6 @@
 import { Event, IEvent } from '@ocoda/event-sourcing';
-import { type IssueTrackerType } from '../aggregate/IssueContext';
+
+export type IssueTrackerType = 'GITHUB' | 'GITLAB' | 'JIRA';
 
 @Event('issue-reference-provided')
 export class IssueReferenceProvidedEvent implements IEvent {

@@ -8,6 +8,7 @@ import {
   type MongoDBSnapshotStoreConfig,
 } from '@ocoda/event-sourcing-mongodb';
 import { EventSourcingModule } from '@ocoda/event-sourcing';
+import { IssueReferenceProvidedEvent } from '../events';
 import { HealthController } from './health.controller';
 import { MongoDBHealthIndicator } from './mongodb.health';
 
@@ -21,7 +22,7 @@ import { MongoDBHealthIndicator } from './mongodb.health';
     >({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        events: [],
+        events: [IssueReferenceProvidedEvent],
         eventStore: {
           driver: MongoDBEventStore,
           url: configService.getOrThrow<string>('MONGODB_URL'),

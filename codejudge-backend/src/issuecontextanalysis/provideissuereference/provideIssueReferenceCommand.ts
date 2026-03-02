@@ -4,7 +4,8 @@ import {
   ICommandHandler,
   UUID,
 } from '@ocoda/event-sourcing';
-import { IssueContext, type IssueTrackerType } from '../aggregate/IssueContext';
+import { type IssueTrackerType } from '../../events';
+import { IssueContext } from '../aggregate/IssueContext';
 import { IssueContextRepository } from '../aggregate/IssueContextRepository';
 
 export class ProvideIssueReferenceCommand implements ICommand {

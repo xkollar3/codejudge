@@ -1,7 +1,6 @@
 import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
-import { CommandBus } from '@ocoda/event-sourcing';
-import { UUID } from 'crypto';
-import { type IssueTrackerType } from '../aggregate/IssueContext';
+import { CommandBus, UUID } from '@ocoda/event-sourcing';
+import { type IssueTrackerType } from '../../events';
 import { ProvideIssueReferenceCommand } from './provideIssueReferenceCommand';
 import { IsNotEmpty } from 'class-validator';
 
@@ -13,7 +12,7 @@ class ProvideIssueContextRequest {
 }
 
 type ProvideIssueContextResponse = {
-  id: UUID;
+  id: string;
 };
 
 @Controller('issue-context')
@@ -33,6 +32,6 @@ export class ProvideIssueContextController {
       new ProvideIssueReferenceCommand(request.trackerType, request.issueUrl),
     );
 
-    return { id };
+    return { id: id.value };
   }
 }
