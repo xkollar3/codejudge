@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from '../shared/shared.module';
 import { IssueContextRepository } from './aggregate/IssueContextRepository';
 import { GitHubIssueTracker } from './issuetracker/github';
@@ -11,11 +12,19 @@ import { RetrievePullRequestContextPolicy } from './retrievepullrequestcontext/r
 import { RetrievePullRequestContextCommandHandler } from './retrievepullrequestcontext/retrievePullRequestContextCommand';
 import { RetrievePullRequestDiffsPolicy } from './retrievepullrequestdiffs/retrievePullRequestDiffsPolicy';
 import { RetrievePullRequestDiffsCommandHandler } from './retrievepullrequestdiffs/retrievePullRequestDiffsCommand';
+import { GatheredContextController } from './readmodel/gatheredContext.controller';
+import { GatheredContext, GatheredContextSchema } from './readmodel/gatheredContext.schema';
+import { OnIssueContextRetrieved, OnPullRequestContextRetrieved, OnPullRequestDiffsRetrieved } from './readmodel/gatheredContextProjection';
 import { GitHubVcsClient } from './vcs/github';
 import { VcsClientResolver } from './vcs/vcsAcl';
 
 @Module({
-  imports: [SharedModule],
+  imports: [
+    SharedModule,
+    MongooseModule.forFeature([
+      { name: GatheredContext.name, schema: GatheredContextSchema },
+    ]),
+  ],
   providers: [
     IssueContextRepository,
     ProvideIssueReferenceCommandHandler,
@@ -29,7 +38,10 @@ import { VcsClientResolver } from './vcs/vcsAcl';
     IssueTrackerResolver,
     GitHubVcsClient,
     VcsClientResolver,
+    OnIssueContextRetrieved,
+    OnPullRequestContextRetrieved,
+    OnPullRequestDiffsRetrieved,
   ],
-  controllers: [ProvideIssueContextController],
+  controllers: [ProvideIssueContextController, GatheredContextController],
 })
 export class IssueContextGatheringModule {}

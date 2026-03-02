@@ -142,4 +142,5 @@ describe('IssueContext', () => {
     expect(file1.fileBefore).toBeNull();
     expect(file1.fileAfter).toBe('export const newFile = true;');
   });
+
 });

@@ -109,6 +109,7 @@ export class IssueContext extends AggregateRoot {
         ),
     );
   }
+
 }
 
 export class TrackerIssueContext {
