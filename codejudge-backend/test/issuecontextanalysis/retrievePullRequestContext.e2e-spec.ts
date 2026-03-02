@@ -5,9 +5,9 @@ import { App } from 'supertest/types';
 import { EventStore, EventStream, IEvent, UUID } from '@ocoda/event-sourcing';
 import { IssueContextModule } from 'src/issuecontextanalysis/issueContextAnalysisModule';
 import { IssueContext } from 'src/issuecontextanalysis/aggregate/IssueContext';
-import { IssueContextRetrievedEvent } from 'src/events';
+import { PullRequestContextRetrievedEvent } from 'src/events';
 
-describe('retrieveIssueContext (e2e)', () => {
+describe('retrievePullRequestContext (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -24,7 +24,7 @@ describe('retrieveIssueContext (e2e)', () => {
     await app.close();
   });
 
-  it('retrieves issue context from GitHub and emits IssueContextRetrievedEvent', async () => {
+  it('retrieves pull request context from GitHub and emits PullRequestContextRetrievedEvent', async () => {
     const response = await request(app.getHttpServer())
       .post('/issue-context')
       .send({
@@ -38,17 +38,22 @@ describe('retrieveIssueContext (e2e)', () => {
     const eventStore = app.get(EventStore);
     const stream = EventStream.for(IssueContext, aggregateId);
 
-    const events = await pollEvents(eventStore, stream, 2);
+    const events = await pollEvents(eventStore, stream, 3);
 
-    const retrievedEvent = events.find(
-      (e) => e instanceof IssueContextRetrievedEvent,
+    const prEvent = events.find(
+      (e) => e instanceof PullRequestContextRetrievedEvent,
     );
 
-    expect(retrievedEvent).toBeDefined();
-    expect(retrievedEvent!.title).toBeDefined();
-    expect(retrievedEvent!.description).toBeDefined();
-    expect(retrievedEvent!.pullRequests).toContain(
+    expect(prEvent).toBeDefined();
+    expect(prEvent!.pullRequestContexts).toHaveLength(1);
+    expect(prEvent!.pullRequestContexts[0].url).toBe(
       'https://github.com/xkollar3/codejudge/pull/2',
+    );
+    expect(prEvent!.pullRequestContexts[0].description).toBe(
+      'Added a section for developers to highlight improvements.',
+    );
+    expect(prEvent!.pullRequestContexts[0].comments).toContain(
+      'Missing more detailed description of the project here.',
     );
   }, 15000);
 });
@@ -58,7 +63,7 @@ async function pollEvents(
   stream: EventStream,
   expectedCount: number,
 ): Promise<IEvent[]> {
-  const timeoutMs = 5000;
+  const timeoutMs = 10000;
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const events: IEvent[] = [];

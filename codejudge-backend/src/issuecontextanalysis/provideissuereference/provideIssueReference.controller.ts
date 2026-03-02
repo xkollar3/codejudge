@@ -1,12 +1,14 @@
 import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
 import { CommandBus, UUID } from '@ocoda/event-sourcing';
-import { type IssueTrackerType } from '../../events';
+import { type IssueTrackerType, type VcsType } from '../../events';
 import { ProvideIssueReferenceCommand } from './provideIssueReferenceCommand';
 import { IsNotEmpty } from 'class-validator';
 
 class ProvideIssueContextRequest {
   @IsNotEmpty()
   public readonly trackerType: IssueTrackerType;
+  @IsNotEmpty()
+  public readonly vcsType: VcsType;
   @IsNotEmpty()
   public readonly issueUrl: string;
 }
@@ -29,7 +31,7 @@ export class ProvideIssueContextController {
     );
 
     const id: UUID = await this.commandBus.execute(
-      new ProvideIssueReferenceCommand(request.trackerType, request.issueUrl),
+      new ProvideIssueReferenceCommand(request.trackerType, request.vcsType, request.issueUrl),
     );
 
     return { id: id.value };

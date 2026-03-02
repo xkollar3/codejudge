@@ -6,6 +6,9 @@ import { RetrieveIssueContextCommandHandler } from './issuetracker/issueTrackerA
 import { ProvideIssueContextController } from './provideissuereference/provideIssueReference.controller';
 import { ProvideIssueReferenceCommandHandler } from './provideissuereference/provideIssueReferenceCommand';
 import { RetrieveIssueContextPolicy } from './retrieveissuecontext/retrieveIssueContextPolicy';
+import { RetrievePullRequestContextPolicy } from './retrievepullrequestcontext/retrievePullRequestContextPolicy';
+import { RetrievePullRequestContextCommandHandler } from './vcs/vcsAcl';
+import { GitHubVcsClient } from './vcs/github';
 
 @Module({
   imports: [SharedModule],
@@ -14,7 +17,10 @@ import { RetrieveIssueContextPolicy } from './retrieveissuecontext/retrieveIssue
     ProvideIssueReferenceCommandHandler,
     RetrieveIssueContextCommandHandler,
     RetrieveIssueContextPolicy,
+    RetrievePullRequestContextPolicy,
+    RetrievePullRequestContextCommandHandler,
     GitHubIssueTracker,
+    GitHubVcsClient,
   ],
   controllers: [ProvideIssueContextController],
 })

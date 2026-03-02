@@ -4,13 +4,14 @@ import {
   ICommandHandler,
   UUID,
 } from '@ocoda/event-sourcing';
-import { type IssueTrackerType } from '../../events';
+import { type IssueTrackerType, type VcsType } from '../../events';
 import { IssueContext } from '../aggregate/IssueContext';
 import { IssueContextRepository } from '../aggregate/IssueContextRepository';
 
 export class ProvideIssueReferenceCommand implements ICommand {
   constructor(
     public readonly trackerType: IssueTrackerType,
+    public readonly vcsType: VcsType,
     public readonly issueUrl: string,
   ) {}
 }
@@ -22,7 +23,7 @@ export class ProvideIssueReferenceCommandHandler implements ICommandHandler<Prov
   async execute(command: ProvideIssueReferenceCommand): Promise<UUID> {
     const issueContext = new IssueContext();
 
-    issueContext.provideIssueReference(command.trackerType, command.issueUrl);
+    issueContext.provideIssueReference(command.trackerType, command.vcsType, command.issueUrl);
 
     await this.aggregateRepository.save(issueContext);
 

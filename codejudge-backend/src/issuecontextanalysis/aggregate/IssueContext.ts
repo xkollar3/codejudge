@@ -7,29 +7,47 @@ import {
 import {
   IssueReferenceProvidedEvent,
   IssueContextRetrievedEvent,
+  PullRequestContextRetrievedEvent,
+  type PullRequestContextPayload,
   type IssueTrackerType,
+  type VcsType,
 } from '../../events';
 
 @Aggregate()
 export class IssueContext extends AggregateRoot {
   public readonly id: UUID;
   private trackerType?: IssueTrackerType;
+  private vcsType?: VcsType;
   private issueUrl?: string;
 
   private trackerIssueContext?: TrackerIssueContext;
+  private pullRequestContexts?: PullRequestContext[];
 
   constructor(id?: UUID) {
     super();
     this.id = id ?? UUID.generate();
   }
 
-  public provideIssueReference(trackerType: IssueTrackerType, url: string) {
-    this.applyEvent(new IssueReferenceProvidedEvent(trackerType, url));
+  public getVcsType(): VcsType {
+    if (!this.vcsType) {
+      throw new Error('Assertion failed: VCS type has not been set');
+    }
+
+    return this.vcsType;
+  }
+
+  public provideIssueReference(
+    trackerType: IssueTrackerType,
+    vcsType: VcsType,
+    url: string,
+  ) {
+    this.applyEvent(new IssueReferenceProvidedEvent(trackerType, vcsType, url));
   }
 
   @EventHandler(IssueReferenceProvidedEvent)
   applyIssueReferenceProvided(event: IssueReferenceProvidedEvent) {
     this.trackerType = event.trackerType;
+    this.vcsType = event.vcsType;
     this.issueUrl = event.issueUrl;
   }
 
@@ -51,6 +69,17 @@ export class IssueContext extends AggregateRoot {
       event.pullRequests,
     );
   }
+
+  public retrievePullRequestContext(details: PullRequestContextPayload[]) {
+    this.applyEvent(new PullRequestContextRetrievedEvent(details));
+  }
+
+  @EventHandler(PullRequestContextRetrievedEvent)
+  applyPullRequestContextRetrieved(event: PullRequestContextRetrievedEvent) {
+    this.pullRequestContexts = event.pullRequestContexts.map(
+      (ctx) => new PullRequestContext(ctx.url, ctx.description, ctx.comments),
+    );
+  }
 }
 
 export class TrackerIssueContext {
@@ -58,5 +87,13 @@ export class TrackerIssueContext {
     public readonly title: string,
     public readonly description: string,
     public readonly pullRequests: string[],
+  ) {}
+}
+
+export class PullRequestContext {
+  constructor(
+    public readonly url: string,
+    public readonly description: string,
+    public readonly comments: string[],
   ) {}
 }

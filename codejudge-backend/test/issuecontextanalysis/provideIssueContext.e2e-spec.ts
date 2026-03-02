@@ -31,7 +31,7 @@ describe('provideIssueContext (e2e)', () => {
 
     const response = await request(app.getHttpServer())
       .post('/issue-context')
-      .send({ issueUrl, trackerType })
+      .send({ issueUrl, trackerType, vcsType: 'GITHUB' })
       .expect(201);
 
     expect(response.body.id).toMatch(UUID_REGEX);
@@ -50,7 +50,7 @@ describe('provideIssueContext (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/issue-context')
-      .send({ trackerType: 'GITHUB' })
+      .send({ trackerType: 'GITHUB', vcsType: 'GITHUB' })
       .expect(400);
   });
 });
