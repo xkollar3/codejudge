@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { IssueContextModule } from 'src/issuecontextanalysis/issueContextAnalysisModule';
+import { IssueContextGatheringModule } from 'src/issuecontextgathering/issueContextGatheringModule';
 import { IssueTrackerType } from 'src/events';
 
 const UUID_REGEX =
@@ -13,7 +13,7 @@ describe('provideIssueContext (e2e)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [IssueContextModule],
+      imports: [IssueContextGatheringModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

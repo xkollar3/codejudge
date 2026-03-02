@@ -3,8 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { EventStore, EventStream, UUID } from '@ocoda/event-sourcing';
-import { IssueContextModule } from 'src/issuecontextanalysis/issueContextAnalysisModule';
-import { IssueContext } from 'src/issuecontextanalysis/aggregate/IssueContext';
+import { IssueContextGatheringModule } from 'src/issuecontextgathering/issueContextGatheringModule';
+import { IssueContext } from 'src/issuecontextgathering/aggregate/IssueContext';
 import { PullRequestDiffsRetrievedEvent } from 'src/events';
 import { pollEvents } from '../utils/pollEvents';
 
@@ -13,7 +13,7 @@ describe('retrievePullRequestDiffs (e2e)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [IssueContextModule],
+      imports: [IssueContextGatheringModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

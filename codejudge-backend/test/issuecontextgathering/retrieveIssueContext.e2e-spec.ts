@@ -3,17 +3,17 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { EventStore, EventStream, UUID } from '@ocoda/event-sourcing';
-import { IssueContextModule } from 'src/issuecontextanalysis/issueContextAnalysisModule';
-import { IssueContext } from 'src/issuecontextanalysis/aggregate/IssueContext';
-import { PullRequestContextRetrievedEvent } from 'src/events';
+import { IssueContextGatheringModule } from 'src/issuecontextgathering/issueContextGatheringModule';
+import { IssueContext } from 'src/issuecontextgathering/aggregate/IssueContext';
+import { IssueContextRetrievedEvent } from 'src/events';
 import { pollEvents } from '../utils/pollEvents';
 
-describe('retrievePullRequestContext (e2e)', () => {
+describe('retrieveIssueContext (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [IssueContextModule],
+      imports: [IssueContextGatheringModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -25,7 +25,7 @@ describe('retrievePullRequestContext (e2e)', () => {
     await app.close();
   });
 
-  it('retrieves pull request context from GitHub and emits PullRequestContextRetrievedEvent', async () => {
+  it('retrieves issue context from GitHub and emits IssueContextRetrievedEvent', async () => {
     const response = await request(app.getHttpServer())
       .post('/issue-context')
       .send({
@@ -39,22 +39,17 @@ describe('retrievePullRequestContext (e2e)', () => {
     const eventStore = app.get(EventStore);
     const stream = EventStream.for(IssueContext, aggregateId);
 
-    const events = await pollEvents(eventStore, stream, 3);
+    const events = await pollEvents(eventStore, stream, 2);
 
-    const prEvent = events.find(
-      (e) => e instanceof PullRequestContextRetrievedEvent,
+    const retrievedEvent = events.find(
+      (e) => e instanceof IssueContextRetrievedEvent,
     );
 
-    expect(prEvent).toBeDefined();
-    expect(prEvent!.pullRequestContexts).toHaveLength(1);
-    expect(prEvent!.pullRequestContexts[0].url).toBe(
+    expect(retrievedEvent).toBeDefined();
+    expect(retrievedEvent!.title).toBeDefined();
+    expect(retrievedEvent!.description).toBeDefined();
+    expect(retrievedEvent!.pullRequests).toContain(
       'https://github.com/xkollar3/codejudge/pull/2',
-    );
-    expect(prEvent!.pullRequestContexts[0].description).toBe(
-      'Added a section for developers to highlight improvements.',
-    );
-    expect(prEvent!.pullRequestContexts[0].comments).toContain(
-      'Missing more detailed description of the project here.',
     );
   }, 15000);
 });

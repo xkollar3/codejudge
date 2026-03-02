@@ -32,4 +32,4 @@ import { VcsClientResolver } from './vcs/vcsAcl';
   ],
   controllers: [ProvideIssueContextController],
 })
-export class IssueContextModule {}
+export class IssueContextGatheringModule {}
